@@ -40,8 +40,9 @@ if access_token:
     st.title("Atur Ulang Password Anda")
     
     try:
-        # Atur sesi sementara menggunakan token dari URL.
-        supabase.auth.set_session(str(access_token), None)
+        # --- PERBAIKAN UTAMA DI SINI ---
+        # Mengganti None dengan string kosong "" untuk refresh token.
+        supabase.auth.set_session(str(access_token), "")
 
         with st.form("update_password_form"):
             st.write("Silakan masukkan password baru Anda di bawah ini.")
@@ -66,9 +67,7 @@ if access_token:
                     st.rerun()
 
     except Exception as e:
-        # --- PERUBAHAN DI SINI UNTUK DEBUGGING ---
-        # Menampilkan pesan error yang lebih detail untuk mengetahui masalah sebenarnya
-        st.error(f"Gagal memproses link: {e}")
+        st.error(f"Gagal memproses link: Link tidak valid atau sudah kedaluwarsa. Silakan minta link baru.")
 
 
 # --- KONDISI 2: Pengguna sudah login ---
@@ -111,7 +110,7 @@ else:
             new_password = st.text_input("Password", type="password", key="signup_password")
             if st.form_submit_button("Sign Up"):
                 try:
-                    session = supabase.auth.sign_up({"email": new_email, "password": new_password})
+                    session = supabase.auth.sign_up({"email": new__email, "password": new_password})
                     st.session_state['user'] = session.user
                     st.rerun()
                 except Exception as e:
