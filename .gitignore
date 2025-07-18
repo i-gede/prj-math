@@ -1,0 +1,10 @@
+# Abaikan file environment yang berisi rahasia
+.env
+
+# Abaikan direktori cache Python
+__pycache__/
+
+# Abaikan direktori virtual environment (jika Anda menggunakannya)
+venv/
+*.venv/
+env/

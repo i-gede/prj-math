@@ -1,0 +1,9 @@
+math-course-app/
+├── app.py                     # Entry point aplikasi
+├── supabase_client.py         # Koneksi ke Supabase
+├── pages/
+│   ├── 1_Materi_Matematika.py # Halaman materi pelajaran
+│   └── 2_Kuis_Matematika.py   # Halaman kuis
+├── utils/
+│   └── quiz_data.py           # Soal dan kunci kuis
+├── requirements.txt           # Daftar dependencies

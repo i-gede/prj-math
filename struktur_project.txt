@@ -1,0 +1,7 @@
+my-course-app
+├── app.py                 # Main Streamlit app
+├── supabase_client.py     # Koneksi ke Supabase
+├── components/
+│   ├── quiz.py
+│   └── lesson.py
+└── requirements.txt
