@@ -1,6 +1,12 @@
 import streamlit as st
 from supabase_client import supabase
 
+# Cek status login pengguna
+if 'user' not in st.session_state:
+    st.error("⚠️ Anda harus login terlebih dahulu untuk mengakses halaman ini.")
+    st.stop() # Menghentikan eksekusi script jika belum login
+
+
 # Konfigurasi judul halaman
 st.set_page_config(page_title="Materi Matematika", page_icon="📚")
 st.title("📚 Materi Pelajaran Matematika")
