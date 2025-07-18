@@ -33,14 +33,18 @@ def main_app():
 
 # Ambil parameter dari URL
 params = st.query_params
-access_token = params.get("access_token") # Kita hanya butuh access_token
+access_token = params.get("access_token")
 
 # --- KONDISI 1: Ada token reset password di URL ---
-# Cek HANYA untuk access_token
 if access_token:
     st.title("Atur Ulang Password Anda")
     
     try:
+        # --- PERBAIKAN UTAMA DI SINI ---
+        # Atur sesi sementara menggunakan token dari URL.
+        # Refresh token tidak diperlukan untuk operasi ini.
+        supabase.auth.set_session(str(access_token), None)
+
         with st.form("update_password_form"):
             st.write("Silakan masukkan password baru Anda di bawah ini.")
             new_password = st.text_input("Password Baru", type="password")
@@ -53,20 +57,19 @@ if access_token:
                 elif new_password != confirm_password:
                     st.error("Password tidak cocok. Silakan coba lagi.")
                 else:
-                    # Kirim token langsung ke fungsi update_user
+                    # Setelah sesi diatur, kita bisa langsung update password
                     supabase.auth.update_user(
-                        attributes={"password": new_password}, 
-                        jwt=str(access_token) # Konversi ke string untuk keamanan
+                        {"password": new_password}
                     )
                     st.success("Password berhasil diperbarui! Silakan login dengan password baru Anda.")
-                    # Hapus parameter dari URL agar tidak masuk ke mode reset lagi
+                    # Hapus parameter dari URL dan bersihkan sesi
                     st.query_params.clear()
+                    supabase.auth.sign_out() # Membersihkan sesi sementara
                     st.rerun()
 
     except Exception as e:
-        # --- PERUBAHAN DI SINI UNTUK DEBUGGING ---
-        # Menampilkan pesan error yang lebih detail dari Supabase
-        st.error(f"Gagal memperbarui password: {e}")
+        st.error(f"Gagal memperbarui password: Link tidak valid atau sudah kedaluwarsa. Silakan minta link baru.")
+
 
 # --- KONDISI 2: Pengguna sudah login ---
 elif 'user' in st.session_state:
