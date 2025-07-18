@@ -68,6 +68,25 @@ if 'user' not in st.session_state:
                 else:
                     st.warning("Mohon isi email dan password.")
 
+        # --- BAGIAN BARU: LUPA PASSWORD ---
+        st.markdown("---")
+        with st.expander("Lupa Password?"):
+            with st.form("reset_password_form"):
+                st.write("Masukkan email Anda untuk menerima link reset password.")
+                reset_email = st.text_input("Email", key="reset_email")
+                reset_button = st.form_submit_button("Kirim Link Reset")
+
+                if reset_button:
+                    if reset_email:
+                        try:
+                            # Memanggil fungsi Supabase untuk mengirim email reset
+                            supabase.auth.reset_password_for_email(email=reset_email)
+                            st.success("Link reset password telah dikirim! Silakan periksa email Anda (termasuk folder spam).")
+                        except Exception as e:
+                            st.error(f"Gagal mengirim email: {e}")
+                    else:
+                        st.warning("Mohon masukkan email Anda.")
+
     # --- Tab Sign Up ---
     with signup_tab:
         with st.form("signup_form"):
