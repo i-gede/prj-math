@@ -41,9 +41,6 @@ if access_token:
     st.title("Atur Ulang Password Anda")
     
     try:
-        # Kita tidak perlu lagi mengatur sesi sementara.
-        # Token akan digunakan langsung saat update password.
-        
         with st.form("update_password_form"):
             st.write("Silakan masukkan password baru Anda di bawah ini.")
             new_password = st.text_input("Password Baru", type="password")
@@ -56,11 +53,10 @@ if access_token:
                 elif new_password != confirm_password:
                     st.error("Password tidak cocok. Silakan coba lagi.")
                 else:
-                    # --- PERUBAHAN UTAMA DI SINI ---
                     # Kirim token langsung ke fungsi update_user
                     supabase.auth.update_user(
                         attributes={"password": new_password}, 
-                        jwt=access_token
+                        jwt=str(access_token) # Konversi ke string untuk keamanan
                     )
                     st.success("Password berhasil diperbarui! Silakan login dengan password baru Anda.")
                     # Hapus parameter dari URL agar tidak masuk ke mode reset lagi
@@ -68,7 +64,9 @@ if access_token:
                     st.rerun()
 
     except Exception as e:
-        st.error(f"Link reset password tidak valid atau sudah kedaluwarsa. Silakan coba lagi.")
+        # --- PERUBAHAN DI SINI UNTUK DEBUGGING ---
+        # Menampilkan pesan error yang lebih detail dari Supabase
+        st.error(f"Gagal memperbarui password: {e}")
 
 # --- KONDISI 2: Pengguna sudah login ---
 elif 'user' in st.session_state:
