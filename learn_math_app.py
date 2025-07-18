@@ -40,9 +40,16 @@ if access_token:
     st.title("Atur Ulang Password Anda")
     
     try:
-        # Mengganti None dengan string kosong "" untuk refresh token.
-        supabase.auth.set_session(str(access_token), "")
+        # --- PERBAIKAN UTAMA: Gunakan verify_otp ---
+        # Verifikasi token HANYA SEKALI saat halaman dimuat
+        if 'token_verified' not in st.session_state:
+            supabase.auth.verify_otp({
+                "token": str(access_token),
+                "type": "recovery"
+            })
+            st.session_state.token_verified = True
 
+        # Setelah token terverifikasi, tampilkan formulir
         with st.form("update_password_form"):
             st.write("Silakan masukkan password baru Anda di bawah ini.")
             new_password = st.text_input("Password Baru", type="password")
@@ -55,20 +62,22 @@ if access_token:
                 elif new_password != confirm_password:
                     st.error("Password tidak cocok. Silakan coba lagi.")
                 else:
-                    # Setelah sesi diatur, kita bisa langsung update password
+                    # Sesi sudah aktif dari verify_otp, jadi kita bisa langsung update
                     supabase.auth.update_user(
                         {"password": new_password}
                     )
                     st.success("Password berhasil diperbarui! Silakan login dengan password baru Anda.")
                     # Hapus parameter dari URL dan bersihkan sesi
+                    del st.session_state.token_verified
                     st.query_params.clear()
-                    supabase.auth.sign_out() # Membersihkan sesi sementara
+                    supabase.auth.sign_out() 
                     st.rerun()
 
     except Exception as e:
-        # --- PERUBAHAN DI SINI UNTUK DEBUGGING ---
-        # Menampilkan pesan error yang lebih detail untuk mengetahui masalah sebenarnya
+        # Jika verify_otp gagal, link tidak valid atau kedaluwarsa
         st.error(f"Gagal memproses link. Pesan error teknis: {e}")
+        if 'token_verified' in st.session_state:
+            del st.session_state.token_verified
 
 
 # --- KONDISI 2: Pengguna sudah login ---
@@ -111,7 +120,6 @@ else:
             new_password = st.text_input("Password", type="password", key="signup_password")
             if st.form_submit_button("Sign Up"):
                 try:
-                    # --- PERBAIKAN KESALAHAN KETIK DI SINI ---
                     session = supabase.auth.sign_up({"email": new_email, "password": new_password})
                     st.session_state['user'] = session.user
                     st.rerun()
