@@ -33,16 +33,16 @@ def main_app():
 
 # Ambil parameter dari URL
 params = st.query_params
-access_token = params.get("access_token")
-refresh_token = params.get("refresh_token")
+access_token = params.get("access_token") # Kita hanya butuh access_token
 
 # --- KONDISI 1: Ada token reset password di URL ---
-if access_token and refresh_token:
+# Cek HANYA untuk access_token
+if access_token:
     st.title("Atur Ulang Password Anda")
     
     try:
-        # Set sesi sementara menggunakan token dari URL
-        st.session_state.temp_session = supabase.auth.set_session(access_token, refresh_token)
+        # Kita tidak perlu lagi mengatur sesi sementara.
+        # Token akan digunakan langsung saat update password.
         
         with st.form("update_password_form"):
             st.write("Silakan masukkan password baru Anda di bawah ini.")
@@ -56,18 +56,19 @@ if access_token and refresh_token:
                 elif new_password != confirm_password:
                     st.error("Password tidak cocok. Silakan coba lagi.")
                 else:
-                    # Karena sesi sudah di-set, kita bisa langsung update user
-                    supabase.auth.update_user({"password": new_password})
+                    # --- PERUBAHAN UTAMA DI SINI ---
+                    # Kirim token langsung ke fungsi update_user
+                    supabase.auth.update_user(
+                        attributes={"password": new_password}, 
+                        jwt=access_token
+                    )
                     st.success("Password berhasil diperbarui! Silakan login dengan password baru Anda.")
                     # Hapus parameter dari URL agar tidak masuk ke mode reset lagi
                     st.query_params.clear()
-                    # Hapus sesi sementara
-                    if 'temp_session' in st.session_state:
-                        del st.session_state['temp_session']
                     st.rerun()
 
     except Exception as e:
-        st.error(f"Link reset password tidak valid atau sudah kedaluwarsa. Silakan coba lagi. Error: {e}")
+        st.error(f"Link reset password tidak valid atau sudah kedaluwarsa. Silakan coba lagi.")
 
 # --- KONDISI 2: Pengguna sudah login ---
 elif 'user' in st.session_state:
