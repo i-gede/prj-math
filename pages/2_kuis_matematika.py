@@ -6,6 +6,20 @@ if 'user' not in st.session_state:
     st.error("⚠️ Anda harus login terlebih dahulu untuk mengakses halaman ini.")
     st.stop() # Menghentikan eksekusi script jika belum login
 
+# --- Fungsi baru untuk menyimpan progres ---
+def save_progress(user_id, score, total_questions):
+    """Menyimpan hasil kuis ke tabel user_progress di Supabase."""
+    try:
+        data_to_insert = {
+            "user_id": user_id,
+            "score": score,
+            "total_questions": total_questions,
+            "quiz_name": "Kuis Matematika Dasar" # Bisa dibuat dinamis jika ada banyak kuis
+        }
+        supabase.table("user_progress").insert(data_to_insert).execute()
+        st.toast("Progres Anda telah disimpan!", icon="💾")
+    except Exception as e:
+        st.error(f"Gagal menyimpan progres: {e}")
 
 # Konfigurasi judul halaman
 st.set_page_config(page_title="Kuis Matematika", page_icon="📝")
@@ -41,6 +55,14 @@ current_q_index = st.session_state.current_question
 if current_q_index >= len(questions):
     st.success(f"🎉 Kuis Selesai! Skor Akhir Anda: **{st.session_state.score} / {len(questions)}**")
     
+    # --- MODIFIKASI DIMULAI DI SINI ---
+    # Simpan progres HANYA JIKA belum pernah disimpan untuk sesi ini
+    if not st.session_state.progress_saved:
+        user_id = st.session_state.user.id
+        save_progress(user_id, st.session_state.score, len(questions))
+        st.session_state.progress_saved = True # Tandai bahwa progres sudah disimpan
+    # --- MODIFIKASI SELESAI ---
+
     # Tampilkan review jawaban
     st.subheader("Review Jawaban Anda")
     for i, q in enumerate(questions):
