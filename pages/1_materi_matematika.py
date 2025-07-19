@@ -6,21 +6,23 @@ if 'user' not in st.session_state:
     st.error("⚠️ Anda harus login terlebih dahulu untuk mengakses halaman ini.")
     st.stop()
 
-# --- Sidebar Dropdown untuk Memilih Kelas ---
-st.sidebar.title("Filter Materi")
-grade_options = {
-    "Semua Kelas": None,
-    "Matematika Kelas 7": 7,
-    "Matematika Kelas 8": 8,
-    "Matematika Kelas 9": 9,
-    "Matematika Kelas 10": 10,
-    "Matematika Kelas 11": 11,
-    "Matematika Kelas 12": 12,
-}
-selected_grade_label = st.sidebar.selectbox(
-    "Pilih tingkat kelas:",
-    options=list(grade_options.keys()) # Tampilkan nama kelas sebagai pilihan
-)
+# --- Expander di Sidebar untuk Filter Kelas ---
+# Expander ini akan muncul di sidebar dan bisa dibuka/ditutup
+with st.sidebar.expander("📖 Pilih Kelas Materi", expanded=True):
+    grade_options = {
+        "Semua Kelas": None,
+        "Matematika Kelas 7": 7,
+        "Matematika Kelas 8": 8,
+        "Matematika Kelas 9": 9,
+        "Matematika Kelas 10": 10,
+        "Matematika Kelas 11": 11,
+        "Matematika Kelas 12": 12,
+    }
+    selected_grade_label = st.selectbox(
+        "Pilih tingkat kelas:",
+        options=list(grade_options.keys()), # Tampilkan nama kelas sebagai pilihan
+        label_visibility="collapsed" # Sembunyikan label "Pilih tingkat kelas:" agar lebih rapi
+    )
 
 # Dapatkan angka kelas berdasarkan label yang dipilih
 selected_grade_value = grade_options[selected_grade_label]
@@ -66,4 +68,3 @@ else:
 
 st.markdown("---")
 st.info("Tips: Anda bisa menggunakan format LaTeX untuk menulis rumus matematika di dalam konten materi, contohnya: `$ax^2 + bx + c = 0$`.")
-
