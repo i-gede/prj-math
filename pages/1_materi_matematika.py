@@ -52,8 +52,8 @@ def load_materials(grade=None):
 
 # --- Tampilan Halaman Utama ---
 st.title("📚 Materi Pelajaran Matematika")
-st.header(f"Menampilkan: {selected_grade_label}")
-st.write("Berikut adalah kumpulan materi yang dapat Anda pelajari. Materi diambil langsung dari database.")
+st.header(f"{selected_grade_label}")
+#st.write("Berikut adalah kumpulan materi yang dapat Anda pelajari. Materi diambil langsung dari database.")
 
 # Memuat materi berdasarkan kelas yang dipilih di sidebar
 materials = load_materials(selected_grade_value)
