@@ -40,14 +40,11 @@ if access_token:
     st.title("Atur Ulang Password Anda")
     
     try:
-        # --- PERBAIKAN UTAMA: Gunakan verify_otp ---
-        # Verifikasi token HANYA SEKALI saat halaman dimuat
-        if 'token_verified' not in st.session_state:
-            supabase.auth.verify_otp({
-                "token": str(access_token),
-                "type": "recovery"
-            })
-            st.session_state.token_verified = True
+        # --- PERBAIKAN UTAMA: Gunakan get_user untuk memvalidasi token ---
+        # dan secara implisit mengatur sesi untuk panggilan berikutnya.
+        if 'user_recovery' not in st.session_state:
+            user = supabase.auth.get_user(jwt=str(access_token))
+            st.session_state.user_recovery = user
 
         # Setelah token terverifikasi, tampilkan formulir
         with st.form("update_password_form"):
@@ -59,25 +56,27 @@ if access_token:
             if update_button:
                 if not new_password or not confirm_password:
                     st.warning("Mohon isi kedua kolom password.")
+                elif len(new_password) < 6:
+                    st.warning("Password harus terdiri dari minimal 6 karakter.")
                 elif new_password != confirm_password:
                     st.error("Password tidak cocok. Silakan coba lagi.")
                 else:
-                    # Sesi sudah aktif dari verify_otp, jadi kita bisa langsung update
+                    # Sesi sudah aktif dari get_user, jadi kita bisa langsung update
                     supabase.auth.update_user(
                         {"password": new_password}
                     )
                     st.success("Password berhasil diperbarui! Silakan login dengan password baru Anda.")
                     # Hapus parameter dari URL dan bersihkan sesi
-                    del st.session_state.token_verified
+                    del st.session_state.user_recovery
                     st.query_params.clear()
                     supabase.auth.sign_out() 
                     st.rerun()
 
     except Exception as e:
-        # Jika verify_otp gagal, link tidak valid atau kedaluwarsa
+        # Jika get_user gagal, link tidak valid atau kedaluwarsa
         st.error(f"Gagal memproses link. Pesan error teknis: {e}")
-        if 'token_verified' in st.session_state:
-            del st.session_state.token_verified
+        if 'user_recovery' in st.session_state:
+            del st.session_state.user_recovery
 
 
 # --- KONDISI 2: Pengguna sudah login ---
