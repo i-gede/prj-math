@@ -11,12 +11,12 @@ if 'user' not in st.session_state:
 with st.sidebar.expander("📖 Pilih Kelas Materi", expanded=True):
     grade_options = {
         "Semua Kelas": None,
-        "Matematika Kelas 7": 7,
-        "Matematika Kelas 8": 8,
-        "Matematika Kelas 9": 9,
-        "Matematika Kelas 10": 10,
-        "Matematika Kelas 11": 11,
-        "Matematika Kelas 12": 12,
+        "Kelas 7": 7,
+        "Kelas 8": 8,
+        "Kelas 9": 9,
+        "Kelas 10": 10,
+        "Kelas 11": 11,
+        "Kelas 12": 12,
     }
     selected_grade_label = st.selectbox(
         "Pilih tingkat kelas:",
