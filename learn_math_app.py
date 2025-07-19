@@ -1,6 +1,6 @@
 import streamlit as st
 from supabase_client import supabase
-import requests # Import pustaka requests untuk memanggil API
+import requests 
 import json
 
 # Konfigurasi halaman
@@ -16,7 +16,7 @@ def main_app():
     
     if st.sidebar.button("Logout"):
         del st.session_state['user']
-        st.query_params.clear() # Hapus parameter dari URL saat logout
+        st.query_params.clear() 
         st.rerun()
 
     st.title(f"Selamat Datang di Aplikasi Pembelajaran Matematika! 🧮")
@@ -41,51 +41,45 @@ if access_token:
     st.title("Atur Ulang Password Anda")
 
     with st.form("update_password_form"):
-        st.write("Silakan masukkan password baru Anda di bawah ini.")
+        st.write("Untuk keamanan, silakan masukkan kembali email Anda dan password baru.")
+        # --- PERUBAHAN UTAMA: Tambahkan input email ---
+        email = st.text_input("Email Anda")
         new_password = st.text_input("Password Baru", type="password")
         confirm_password = st.text_input("Konfirmasi Password Baru", type="password")
         update_button = st.form_submit_button("Update Password")
 
         if update_button:
-            if not new_password or not confirm_password:
-                st.warning("Mohon isi kedua kolom password.")
+            if not email or not new_password or not confirm_password:
+                st.warning("Mohon isi semua kolom.")
             elif len(new_password) < 6:
                 st.warning("Password harus terdiri dari minimal 6 karakter.")
             elif new_password != confirm_password:
                 st.error("Password tidak cocok. Silakan coba lagi.")
             else:
-                # --- SOLUSI SEDERHANA & AMAN: Panggil API Supabase secara manual ---
                 try:
-                    # Ambil URL dan Kunci Anon dari Supabase Client
-                    supabase_url = supabase.supabase_url
-                    anon_key = supabase.supabase_key
+                    # --- SOLUSI FINAL: Gunakan verify_otp dengan email dan token ---
+                    session = supabase.auth.verify_otp({
+                        "token": str(access_token),
+                        "type": "recovery",
+                        "email": email
+                    })
                     
-                    # Endpoint untuk update user
-                    url = f"{supabase_url}/auth/v1/user"
+                    # Jika verify_otp berhasil, sesi menjadi aktif
+                    # dan kita bisa langsung update password
+                    supabase.auth.update_user(
+                        {"password": new_password}
+                    )
                     
-                    # Siapkan headers dengan access_token dari email
-                    headers = {
-                        "apikey": anon_key,
-                        "Authorization": f"Bearer {access_token}"
-                    }
-                    
-                    # Siapkan data password baru
-                    data = {"password": new_password}
-                    
-                    # Lakukan PUT request ke API Supabase
-                    response = requests.put(url, headers=headers, json=data)
-                    
-                    # Periksa hasil respons
-                    if response.status_code == 200:
-                        st.success("Password berhasil diperbarui! Silakan login dengan password baru Anda.")
-                        st.query_params.clear()
-                        st.balloons()
-                    else:
-                        error_data = response.json()
-                        st.error(f"Gagal memperbarui password: {error_data.get('msg', 'Link tidak valid atau sudah kedaluwarsa.')}")
+                    st.success("Password berhasil diperbarui! Silakan login dengan password baru Anda.")
+                    st.query_params.clear()
+                    supabase.auth.sign_out() # Bersihkan sesi sementara
+                    st.balloons()
+                    st.rerun()
 
                 except Exception as e:
-                    st.error(f"Gagal terhubung ke server. Error: {e}")
+                    st.error(f"Gagal memperbarui password. Pastikan email benar dan link belum kedaluwarsa.")
+                    st.error(f"Pesan teknis: {e}")
+
 
 # --- KONDISI 2 & 3 (Login, Signup, dll tidak berubah) ---
 elif 'user' in st.session_state:
