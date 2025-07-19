@@ -5,13 +5,13 @@ from dotenv import load_dotenv
 # Muat variabel lingkungan dari file .env
 load_dotenv()
 
-# Ambil URL dan Key dari environment variables
-url: str = os.environ.get(SUPABASE_URL)
-key: str = os.environ.get(SUPABASE_KEY)
+# Ambil URL dan Key dari environment variables berdasarkan NAMA variabelnya
+url: str = os.environ.get("SUPABASE_URL")
+key: str = os.environ.get("SUPABASE_KEY")
 
 # Periksa apakah URL dan Key tersedia
 if not url or not key:
-    raise ValueError("Supabase URL and Key must be set in the .env file.")
+    raise ValueError("Supabase URL and Key must be set in the .env file or in Streamlit secrets.")
 
 # Buat instance klien Supabase
 # Klien ini akan diimpor dan digunakan di halaman lain
