@@ -1,40 +1,69 @@
 import streamlit as st
 from supabase_client import supabase
 
-# Cek status login pengguna
+# Pastikan pengguna sudah login sebelum menjalankan kode halaman apa pun
 if 'user' not in st.session_state:
     st.error("⚠️ Anda harus login terlebih dahulu untuk mengakses halaman ini.")
-    st.stop() # Menghentikan eksekusi script jika belum login
+    st.stop()
+
+# --- Sidebar Dropdown untuk Memilih Kelas ---
+st.sidebar.title("Filter Materi")
+grade_options = {
+    "Semua Kelas": None,
+    "Matematika Kelas 7": 7,
+    "Matematika Kelas 8": 8,
+    "Matematika Kelas 9": 9,
+    "Matematika Kelas 10": 10,
+    "Matematika Kelas 11": 11,
+    "Matematika Kelas 12": 12,
+}
+selected_grade_label = st.sidebar.selectbox(
+    "Pilih tingkat kelas:",
+    options=list(grade_options.keys()) # Tampilkan nama kelas sebagai pilihan
+)
+
+# Dapatkan angka kelas berdasarkan label yang dipilih
+selected_grade_value = grade_options[selected_grade_label]
 
 
-# Konfigurasi judul halaman
-st.set_page_config(page_title="Materi Matematika", page_icon="📚")
-st.title("📚 Materi Pelajaran Matematika")
-st.write("Berikut adalah kumpulan materi yang dapat Anda pelajari. Materi diambil langsung dari database.")
-
-def load_materials():
-    """Mengambil data materi dari tabel 'materials' di Supabase."""
+# --- Fungsi untuk memuat data materi berdasarkan kelas ---
+def load_materials(grade=None):
+    """
+    Mengambil data materi dari Supabase.
+    Jika 'grade' diberikan, maka akan memfilter berdasarkan kelas tersebut.
+    """
     if not supabase:
         st.error("Koneksi ke Supabase gagal. Tidak dapat memuat materi.")
         return []
     try:
-        response = supabase.table('materials').select('title, content').execute()
+        query = supabase.table('materials').select('title, content, grade')
+        
+        # Jika kelas tertentu dipilih (bukan "Semua Kelas"), tambahkan filter
+        if grade is not None:
+            query = query.eq('grade', grade)
+            
+        response = query.order('title').execute()
         return response.data
     except Exception as e:
         st.error(f"Terjadi kesalahan saat mengambil data: {e}")
         return []
 
-# Memuat materi
-materials = load_materials()
+# --- Tampilan Halaman Utama ---
+st.title("📚 Materi Pelajaran Matematika")
+st.header(f"Menampilkan: {selected_grade_label}")
+st.write("Berikut adalah kumpulan materi yang dapat Anda pelajari. Materi diambil langsung dari database.")
+
+# Memuat materi berdasarkan kelas yang dipilih di sidebar
+materials = load_materials(selected_grade_value)
 
 if not materials:
-    st.warning("Belum ada materi yang tersedia. Silakan tambahkan materi di database Supabase Anda pada tabel 'materials'.")
+    st.warning(f"Belum ada materi yang tersedia untuk {selected_grade_label}. Silakan tambahkan materi di database Supabase Anda.")
 else:
     # Tampilkan setiap materi menggunakan expander
     for i, material in enumerate(materials):
         with st.expander(f"**{i+1}. {material.get('title', 'Tanpa Judul')}**", expanded=False):
-            # Gunakan markdown untuk merender konten, termasuk formula LaTeX
             st.markdown(material.get('content', 'Konten tidak tersedia.'), unsafe_allow_html=True)
 
 st.markdown("---")
 st.info("Tips: Anda bisa menggunakan format LaTeX untuk menulis rumus matematika di dalam konten materi, contohnya: `$ax^2 + bx + c = 0$`.")
+
