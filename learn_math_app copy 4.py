@@ -1,11 +1,9 @@
 import streamlit as st
 from supabase_client import supabase
-import requests 
-import json
 
 # Konfigurasi halaman
 st.set_page_config(
-    page_title="Aplikasi Saga Belajar",
+    page_title="Math Course App",
     page_icon="🧮",
     layout="centered"
 )
@@ -16,7 +14,7 @@ def main_app():
     
     if st.sidebar.button("Logout"):
         del st.session_state['user']
-        st.query_params.clear() 
+        st.query_params.clear() # Hapus parameter dari URL saat logout
         st.rerun()
 
     st.title(f"Selamat Datang di Aplikasi Pembelajaran Matematika! 🧮")
@@ -33,79 +31,78 @@ def main_app():
 
 # --- Logika Autentikasi ---
 
+# Ambil parameter dari URL
 params = st.query_params
-access_token = params.get("access_token")
+access_token = params.get("access_token") # Kita hanya butuh access_token
 
 # --- KONDISI 1: Ada token reset password di URL ---
+# Cek HANYA untuk access_token
 if access_token:
     st.title("Atur Ulang Password Anda")
+    
+    try:
+        # Kita tidak perlu lagi mengatur sesi sementara.
+        # Token akan digunakan langsung saat update password.
+        
+        with st.form("update_password_form"):
+            st.write("Silakan masukkan password baru Anda di bawah ini.")
+            new_password = st.text_input("Password Baru", type="password")
+            confirm_password = st.text_input("Konfirmasi Password Baru", type="password")
+            update_button = st.form_submit_button("Update Password")
 
-    with st.form("update_password_form"):
-        st.write("Untuk keamanan, silakan masukkan kembali email Anda dan password baru.")
-        # --- PERUBAHAN UTAMA: Tambahkan input email ---
-        email = st.text_input("Email Anda")
-        new_password = st.text_input("Password Baru", type="password")
-        confirm_password = st.text_input("Konfirmasi Password Baru", type="password")
-        update_button = st.form_submit_button("Update Password")
-
-        if update_button:
-            if not email or not new_password or not confirm_password:
-                st.warning("Mohon isi semua kolom.")
-            elif len(new_password) < 6:
-                st.warning("Password harus terdiri dari minimal 6 karakter.")
-            elif new_password != confirm_password:
-                st.error("Password tidak cocok. Silakan coba lagi.")
-            else:
-                try:
-                    # --- SOLUSI FINAL: Gunakan verify_otp dengan email dan token ---
-                    session = supabase.auth.verify_otp({
-                        "token": str(access_token),
-                        "type": "recovery",
-                        "email": email
-                    })
-                    
-                    # Jika verify_otp berhasil, sesi menjadi aktif
-                    # dan kita bisa langsung update password
+            if update_button:
+                if not new_password or not confirm_password:
+                    st.warning("Mohon isi kedua kolom password.")
+                elif new_password != confirm_password:
+                    st.error("Password tidak cocok. Silakan coba lagi.")
+                else:
+                    # --- PERUBAHAN UTAMA DI SINI ---
+                    # Kirim token langsung ke fungsi update_user
                     supabase.auth.update_user(
-                        {"password": new_password}
+                        attributes={"password": new_password}, 
+                        jwt=access_token
                     )
-                    
                     st.success("Password berhasil diperbarui! Silakan login dengan password baru Anda.")
+                    # Hapus parameter dari URL agar tidak masuk ke mode reset lagi
                     st.query_params.clear()
-                    supabase.auth.sign_out() # Bersihkan sesi sementara
-                    st.balloons()
                     st.rerun()
 
-                except Exception as e:
-                    st.error(f"Gagal memperbarui password. Pastikan email benar dan link belum kedaluwarsa.")
-                    st.error(f"Pesan teknis: {e}")
+    except Exception as e:
+        st.error(f"Link reset password tidak valid atau sudah kedaluwarsa. Silakan coba lagi.")
 
-
-# --- KONDISI 2 & 3 (Login, Signup, dll tidak berubah) ---
+# --- KONDISI 2: Pengguna sudah login ---
 elif 'user' in st.session_state:
     main_app()
+
+# --- KONDISI 3: Halaman login/signup normal ---
 else:
     st.title("Selamat Datang! 👋")
     st.write("Silakan login atau daftar untuk melanjutkan.")
+
     login_tab, signup_tab = st.tabs(["Login", "Sign Up"])
+
     with login_tab:
         with st.form("login_form"):
             st.subheader("Login")
             email = st.text_input("Email", key="login_email")
             password = st.text_input("Password", type="password", key="login_password")
-            if st.form_submit_button("Login"):
+            login_button = st.form_submit_button("Login")
+
+            if login_button:
                 try:
                     session = supabase.auth.sign_in_with_password({"email": email, "password": password})
                     st.session_state['user'] = session.user
                     st.rerun()
                 except Exception:
                     st.error("Gagal login: Pastikan email dan password benar.")
+        
         with st.expander("Lupa Password?"):
             with st.form("reset_password_form"):
                 reset_email = st.text_input("Email untuk reset", key="reset_email")
                 if st.form_submit_button("Kirim Link Reset"):
                     supabase.auth.reset_password_for_email(email=reset_email)
                     st.success("Link reset telah dikirim! Periksa email Anda.")
+
     with signup_tab:
         with st.form("signup_form"):
             st.subheader("Buat Akun Baru")
