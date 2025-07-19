@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Ambil URL dan Key dari environment variables
-url: str = os.environ.get("SUPABASE_URL")
-key: str = os.environ.get("SUPABASE_KEY")
+url: str = os.environ.get(SUPABASE_URL)
+key: str = os.environ.get(SUPABASE_KEY)
 
 # Periksa apakah URL dan Key tersedia
 if not url or not key:
